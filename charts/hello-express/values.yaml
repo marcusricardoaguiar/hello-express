@@ -54,11 +54,6 @@ ingress:
   spec:	
     backend:	
       servicePort: 80
-  hosts:
-  - host: argo-dev-hello-express
-    paths:	
-    - path: /	
-      backendServicePort: 80
 
 resources:
   limits:
