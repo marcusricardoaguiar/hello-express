@@ -1,0 +1,46 @@
+{{- if .Values.ingress.enabled -}}
+{{- $name := include "name" . -}}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $name }}
+  labels:
+    draft: {{ default "draft-app" .Values.draft }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+  annotations:
+{{ toYaml .Values.ingress.annotations | indent 4 }}
+  {{- if .Values.ingress.static_global_address}}
+    kubernetes.io/ingress.global-static-ip-name: {{ .Values.ingress.static_global_address}}
+    {{- if .Values.ingress.self_managed_cert}}
+    ingress.gcp.kubernetes.io/pre-shared-cert: {{ .Values.ingress.self_managed_cert}}
+    {{- end }}
+    {{- if .Values.ingress.google_managed_cert}}
+    networking.gke.io/managed-certificates: {{ .Values.ingress.google_managed_cert}}
+    {{- end }}
+    {{- if .Values.ingress.https_only}}
+    kubernetes.io/force-ssl-redirect: "true"
+    {{- end }}
+  {{- end }}
+spec:
+  {{- if .Values.tls }}
+  tls:
+  - hosts: 
+    - {{ .Values.tls.hosts }}
+    secretName: {{ .Values.tls.secretName }}
+  {{- end }}
+  backend:
+    serviceName: {{ $name }}
+    servicePort: {{ .Values.ingress.spec.backend.servicePort }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ .host | quote }}
+    http:
+      paths:
+      {{- range .paths }}
+      - path: {{ .path }}
+        backend:
+          serviceName: {{ $name  }}
+          servicePort: {{ .backendServicePort }}
+      {{- end }}
+  {{- end }}
+{{- end }}
